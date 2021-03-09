@@ -12,7 +12,7 @@ REPORT Z_SELECT_PATH.
 
 *This 2 variables are used to translate the STRING input to the one needed by FM.
 DATA:  gv_file_pc LIKE rlgrap-filename
-      ,gv_file_sv
+      ,gv_file_sv LIKE rlgrap-filename
       .
 **********************************************************************************
 

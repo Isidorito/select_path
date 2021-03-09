@@ -1,0 +1,113 @@
+*&-----------------------------------------------------------------------*
+*& Report Z_SELECT_PATH
+*&-----------------------------------------------------------------------*
+*&  This code snippet lets you select the path from your PC or SAP SERVER
+*&  Triggering the search help depending on what you want
+*&-----------------------------------------------------------------------*
+REPORT Z_SELECT_PATH.
+
+*Parametro de entrada PATH para save
+*Ayuda de busqueda para ese parametro, debe cambiar si es PC o Server
+*Si es Batch, no puede ponerse un path a PC
+*Salida ALV
+**********************************************************************************
+* DATA declarations
+**********************************************************************************
+
+*This 2 variables are used to translate the STRING input to the one needed by FM.
+DATA:  gv_file_pc LIKE rlgrap-filename
+      ,gv_file_sv
+      .
+**********************************************************************************
+
+
+**********************************************************************************
+*SCREEN Building
+**********************************************************************************
+
+*Declare your input parameter as STRING to be able to receive any value
+PARAMETERS: p_path  TYPE string
+            .
+
+*We declare the RB like this to have both in the same line
+selection-screen begin of line.
+  selection-screen comment 35(3) PC MODIF ID t1.
+            parameters: rb_pc   RADIOBUTTON GROUP r1 DEFAULT 'X' USER-COMMAND gr1.
+  selection-screen comment 45(6) Server MODIF ID t2.
+            PARAMETERS: rb_sv   RADIOBUTTON GROUP r1.
+selection-screen end of line.
+
+*Of cousre, if you don't want that visual enh, you are able to declare like this:
+
+*PARAMETERS:    rb_pc   RADIOBUTTON GROUP r1 DEFAULT 'X' USER-COMMAND gr1
+*              ,rb_sv   RADIOBUTTON GROUP r1
+*              .
+
+*You will see one in the first line and one in the second line (as usual).
+
+* The following code could be done in different ways:
+
+*1) This one alouds us to use translations and 'things'.
+AT SELECTION-SCREEN OUTPUT.
+  pc = text-001.      "PC
+  server = text-002.  "Server
+
+*2) This is the "easiest"
+*AT SELECTION-SCREEN OUTPUT.
+*  pc = 'PC'.
+*  server = 'Server'.
+
+*3) This is the 'evolved' way
+
+* It was not used, as this solution is intended to be 'Copy&Paste'
+
+*   -Create a SET with the parameters values in tbale TVARVC
+*   -Make a SELECT to retrieve the SET
+*   -Loop the table you retrieved and assign the corresponding fields
+
+**********************************************************************************
+
+*This will be triggered every time a user clicks F4 or the Search Help Icon for P_PATH
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_path.
+
+
+  IF rb_pc IS NOT INITIAL.  "Choose file from pc
+    CLEAR: p_path.
+*    If needed you can use the older FM F4_FILENAME
+    CALL FUNCTION 'WS_FILENAME_GET'
+      EXPORTING
+        mask             = ',..'
+        mode             = '0 '
+        title            = 'Choose File'  "This title will be shown in the pop up
+      IMPORTING
+        filename         = gv_file_pc
+      EXCEPTIONS
+        inv_winsys       = 1
+        no_batch         = 2
+        selection_cancel = 3
+        selection_error  = 4
+        OTHERS           = 5.
+    IF sy-subrc <> 0.
+*     MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*             WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+    ELSE.
+      p_path = gv_file_pc.  "Move the path you got to the screen parameter.
+    ENDIF.
+  ELSE. " Choose file from Server
+    CLEAR: p_path.
+    CALL FUNCTION '/SAPDMC/LSM_F4_SERVER_FILE'
+      EXPORTING
+        directory        = '/usr/sap' "This is the root path you want to search, it could be a variable retrieved from a SET for example.
+*       FILEMASK         = ' '
+      IMPORTING
+        serverfile       = gv_file_sv
+      EXCEPTIONS
+        canceled_by_user = 1
+        OTHERS           = 2.
+    IF sy-subrc <> 0.
+*     MESSAGE ID SY-MSGID TYPE SY-MSGTY NUMBER SY-MSGNO
+*             WITH SY-MSGV1 SY-MSGV2 SY-MSGV3 SY-MSGV4.
+    ELSE.
+      p_path = gv_file_sv.  "Move the path you got to the screen parameter.
+    ENDIF.
+  ENDIF.

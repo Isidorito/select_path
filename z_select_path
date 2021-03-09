@@ -6,10 +6,6 @@
 *&-----------------------------------------------------------------------*
 REPORT Z_SELECT_PATH.
 
-*Parametro de entrada PATH para save
-*Ayuda de busqueda para ese parametro, debe cambiar si es PC o Server
-*Si es Batch, no puede ponerse un path a PC
-*Salida ALV
 **********************************************************************************
 * DATA declarations
 **********************************************************************************
